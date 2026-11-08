@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Ovocný fotbal">
+<meta name="theme-color" content="#2e8b4a">
+<title>Ovocný fotbal</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --pitch:#2e8b4a; --pitch-dark:#277a3f; --chalk:#f7f5ee; --ink:#143321;
+  --card:#fffdf6; --kit:#ffd23f; --good:#1fa855; --bad:#e04545;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --pitch:#226b39; --pitch-dark:#1d5d31; color-scheme:dark; }
+}
+:root[data-theme="dark"]{ --pitch:#226b39; --pitch-dark:#1d5d31; }
+html{ scroll-padding-top:env(safe-area-inset-top,0px); height:100%; }
+*,*::before,*::after{ box-sizing:inherit; }
+body{
+  margin:0; height:100%;
+  font-family:"Baloo 2","Trebuchet MS",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color:var(--chalk);
+  background:repeating-linear-gradient(0deg,var(--pitch) 0 64px,var(--pitch-dark) 64px 128px);
+  -webkit-tap-highlight-color:transparent; user-select:none; -webkit-user-select:none;
+  touch-action:manipulation; overflow:hidden;
+}
+button{ font:inherit; color:inherit; border:0; cursor:pointer; }
+#app{ height:100%; max-width:560px; margin:0 auto; }
+.screen{ height:100%; display:flex; flex-direction:column; overflow-y:auto; padding:12px 16px 20px; }
+
+/* ---------- home ---------- */
+.home{ align-items:center; justify-content:center; text-align:center; gap:10px; }
+.logo{ font-size:72px; line-height:1; }
+h1{ margin:0; font-size:44px; font-weight:800; line-height:1.05; letter-spacing:.01em; }
+.sub{ margin:0 0 10px; font-size:20px; font-weight:500; opacity:.85; }
+.big{
+  background:var(--kit); color:var(--ink); font-weight:800; font-size:26px;
+  padding:16px 28px; border-radius:999px; box-shadow:0 6px 0 #c9a21f; width:100%; max-width:340px;
+}
+.big:active{ transform:translateY(4px); box-shadow:0 2px 0 #c9a21f; }
+.row{ display:flex; gap:12px; width:100%; max-width:340px; }
+.sec{
+  flex:1; background:var(--card); color:var(--ink); font-weight:700; font-size:20px;
+  padding:12px; border-radius:20px; box-shadow:0 4px 0 rgba(0,0,0,.28);
+}
+.sec:active{ transform:translateY(3px); box-shadow:0 1px 0 rgba(0,0,0,.28); }
+.seg{ display:flex; gap:6px; width:100%; max-width:340px; background:rgba(0,0,0,.22); padding:5px; border-radius:999px; }
+.seg button{ flex:1; background:transparent; padding:8px 4px; border-radius:999px; font-weight:700; font-size:16px; }
+.seg button.on{ background:var(--chalk); color:var(--ink); }
+.toggle{ background:transparent; font-size:17px; font-weight:600; opacity:.9; padding:6px 10px; }
+.stat{ margin:4px 0 0; font-size:18px; font-weight:600; opacity:.9; }
+
+/* ---------- top bar ---------- */
+.bar{ display:flex; align-items:center; gap:10px; min-height:48px; }
+.icon{ width:44px; height:44px; border-radius:50%; background:rgba(0,0,0,.25); font-size:22px; font-weight:800; }
+.bar .ttl{ flex:1; font-size:24px; font-weight:800; }
+.balls{ display:flex; gap:6px; font-size:22px; font-weight:800; }
+.balls .no{ color:#ffb3b3; }
+
+/* ---------- map ---------- */
+.grid3{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:14px; }
+.tile{
+  background:var(--card); color:var(--ink); border-radius:22px; padding:12px 4px 10px;
+  box-shadow:0 5px 0 rgba(0,0,0,.28); display:flex; flex-direction:column; align-items:center; gap:2px;
+}
+.tile .n{ font-size:38px; font-weight:800; line-height:1; }
+.tile .st{ font-size:20px; color:#e0a800; letter-spacing:1px; }
+.tile .st i{ font-style:normal; color:#d9d6c8; }
+.tile.cur{ outline:5px solid var(--kit); }
+.tile:disabled{ opacity:.5; box-shadow:none; }
+.tile:not(:disabled):active{ transform:translateY(3px); box-shadow:0 2px 0 rgba(0,0,0,.28); }
+
+/* ---------- album ---------- */
+.stick{
+  background:var(--card); color:var(--ink); border-radius:20px; padding:10px 4px;
+  display:flex; flex-direction:column; align-items:center; gap:0; text-align:center; box-shadow:0 4px 0 rgba(0,0,0,.28);
+}
+.stick .em{ font-size:44px; line-height:1.15; }
+.stick .w{ font-size:15px; font-weight:700; line-height:1.1; }
+.stick .w2{ font-size:13px; font-weight:500; opacity:.7; line-height:1.1; }
+.stick.lock .em{ filter:grayscale(1) brightness(.75); opacity:.35; }
+.stick.lock .w{ opacity:.4; }
+.hint{ margin:8px 2px 0; font-size:16px; opacity:.9; }
+.grp{ margin:18px 0 0; font-size:22px; font-weight:800; }
+.cat{ display:inline-block; margin-top:6px; padding:1px 12px 2px; border-radius:999px; font-size:18px; font-weight:800; color:var(--ink); }
+.cat.f{ background:#ffb199; }
+.cat.v{ background:#a8e6a1; }
+.askq .s2{ display:block; font-size:20px; font-weight:600; opacity:.9; }
+.opt .cl{ font-size:22px; font-weight:800; }
+.opt.k-f{ border-bottom:8px solid #ff8a6b; }
+.opt.k-v{ border-bottom:8px solid #5fc866; }
+
+/* ---------- game ---------- */
+.scene{ position:relative; height:230px; flex:none; }
+.goal{
+  position:absolute; left:10%; right:10%; top:8px; height:112px;
+  border:6px solid var(--chalk); border-bottom:0; border-radius:8px 8px 0 0;
+  background:
+    repeating-linear-gradient(45deg,rgba(255,255,255,.22) 0 2px,transparent 2px 14px),
+    repeating-linear-gradient(-45deg,rgba(255,255,255,.22) 0 2px,transparent 2px 14px),
+    rgba(0,0,0,.28);
+  overflow:hidden;
+}
+.keeper{
+  position:absolute; left:50%; bottom:0; margin-left:-39px; font-size:78px; line-height:1;
+  transition:transform .45s cubic-bezier(.2,.8,.3,1);
+}
+.ball{
+  position:absolute; left:50%; bottom:2px; margin-left:-15px; font-size:30px; line-height:1;
+  transition:transform .6s cubic-bezier(.25,.7,.35,1);
+}
+.banner{
+  position:absolute; left:0; right:0; top:58px; text-align:center; font-size:56px; font-weight:800;
+  color:var(--kit); text-shadow:0 4px 0 rgba(0,0,0,.35); opacity:0; transform:scale(.6) rotate(-4deg);
+  transition:opacity .2s, transform .3s cubic-bezier(.3,1.6,.5,1); pointer-events:none;
+}
+.banner.show{ opacity:1; transform:scale(1) rotate(-4deg); }
+.player{
+  position:absolute; left:50%; bottom:2px; margin-left:-122px; font-size:96px; line-height:1;
+  transform:scaleX(-1); transition:transform .25s ease-out;
+}
+.banner.miss{ color:#fff; font-size:44px; }
+.ask{ flex:none; min-height:118px; display:flex; align-items:center; justify-content:center; gap:14px; text-align:center; }
+.say{ width:60px; height:60px; border-radius:50%; background:var(--kit); color:var(--ink); font-size:28px; box-shadow:0 4px 0 #c9a21f; }
+.say:active{ transform:translateY(3px); box-shadow:0 1px 0 #c9a21f; }
+.prompt{ display:flex; flex-direction:column; align-items:flex-start; line-height:1; }
+.prompt .small{ font-size:20px; font-weight:600; opacity:.9; }
+.prompt b{ font-size:46px; font-weight:800; }
+.prompt b.en{ font-size:34px; font-weight:700; opacity:.92; }
+.bigemoji{ font-size:84px; line-height:1; }
+.askq{ font-size:26px; font-weight:700; text-align:left; }
+.reveal{ display:flex; align-items:center; gap:14px; }
+.reveal .em{ font-size:64px; line-height:1; }
+.reveal .tx{ text-align:left; line-height:1.05; }
+.reveal .a{ font-size:34px; font-weight:800; }
+.reveal .b{ font-size:24px; font-weight:600; opacity:.9; }
+.reveal .new{ display:block; margin-top:4px; font-size:17px; font-weight:700; color:var(--kit); }
+.opts{ display:grid; gap:12px; grid-template-columns:repeat(2,1fr); align-content:start; }
+.opts.n3{ grid-template-columns:repeat(3,1fr); }
+.opt{
+  background:var(--card); color:var(--ink); border-radius:24px; min-height:104px; font-size:58px; line-height:1;
+  box-shadow:0 5px 0 rgba(0,0,0,.28); padding:8px 4px;
+}
+.opt.word{ font-size:27px; font-weight:800; min-height:84px; }
+.opt:active{ transform:translateY(3px); box-shadow:0 2px 0 rgba(0,0,0,.28); }
+.opts.locked .opt{ pointer-events:none; }
+.opts.locked .opt:not(.ok):not(.pick){ opacity:.4; }
+.opt.ok{ background:#c9f5d4; outline:5px solid var(--good); }
+.opt.pick{ background:#ffd6d6; outline:5px solid var(--bad); animation:shake .4s; }
+@keyframes shake{ 25%{transform:translateX(-7px)} 75%{transform:translateX(7px)} }
+
+/* ---------- result ---------- */
+.result{ align-items:center; justify-content:center; text-align:center; gap:10px; }
+.stars{ font-size:68px; letter-spacing:6px; color:var(--kit); text-shadow:0 4px 0 rgba(0,0,0,.3); }
+.stars i{ font-style:normal; color:rgba(255,255,255,.35); text-shadow:none; }
+.result h2{ margin:0; font-size:36px; font-weight:800; }
+.result p{ margin:0 0 8px; font-size:22px; font-weight:600; }
+
+@media (max-height:760px){
+  .scene{ height:200px; } .goal{ height:100px; }
+  .keeper{ font-size:66px; margin-left:-33px; } .player{ font-size:80px; margin-left:-104px; }
+  .ask{ min-height:96px; } .bigemoji{ font-size:64px; }
+  .opt{ min-height:88px; font-size:50px; } .opt.word{ min-height:72px; font-size:24px; }
+}
+@media (prefers-reduced-motion: reduce){
+  .ball,.keeper,.banner{ transition-duration:.01s; } .opt.pick{ animation:none; }
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+"use strict";
+
+/* ===== data ===== */
+const ITEMS = [
+  {e:"🍎",cs:"jablko",en:"apple",t:"f"},
+  {e:"🍌",cs:"banán",en:"banana",t:"f"},
+  {e:"🍊",cs:"pomeranč",en:"orange",t:"f"},
+  {e:"🍓",cs:"jahoda",en:"strawberry",t:"f"},
+  {e:"🍅",cs:"rajče",en:"tomato",t:"v"},
+  {e:"🥕",cs:"mrkev",en:"carrot",t:"v"},
+  {e:"🍉",cs:"meloun",en:"watermelon",t:"f"},
+  {e:"🍋",cs:"citron",en:"lemon",t:"f"},
+  {e:"🍇",cs:"hrozny",en:"grapes",t:"f"},
+  {e:"🥔",cs:"brambora",en:"potato",t:"v"},
+  {e:"🍐",cs:"hruška",en:"pear",t:"f"},
+  {e:"🥒",cs:"okurka",en:"cucumber",t:"v"},
+  {e:"🍒",cs:"třešně",en:"cherries",t:"f"},
+  {e:"🌽",cs:"kukuřice",en:"corn",t:"v"},
+  {e:"🍍",cs:"ananas",en:"pineapple",t:"f"},
+  {e:"🥦",cs:"brokolice",en:"broccoli",t:"v"},
+  {e:"🍑",cs:"broskev",en:"peach",t:"f"},
+  {e:"🧅",cs:"cibule",en:"onion",t:"v"},
+  {e:"🥝",cs:"kiwi",en:"kiwi",t:"f"},
+  {e:"🫑",cs:"paprika",en:"pepper",t:"v"},
+  {e:"🥑",cs:"avokádo",en:"avocado",t:"f"},
+  {e:"🍆",cs:"lilek",en:"eggplant",t:"v"},
+  {e:"🥭",cs:"mango",en:"mango",t:"f"},
+  {e:"🥬",cs:"salát",en:"lettuce",t:"v"},
+  {e:"🥥",cs:"kokos",en:"coconut",t:"f"},
+  {e:"🫐",cs:"borůvky",en:"blueberries",t:"f"},
+  {e:"🧄",cs:"česnek",en:"garlic",t:"v"}
+];
+const CAT = {
+  f:{cs:"ovoce",    en:"fruit",     emoji:"🍎"},
+  v:{cs:"zelenina", en:"vegetable", emoji:"🥕"}
+};
+const cap = w => w[0].toUpperCase() + w.slice(1);
+const LEVELS = Math.ceil((ITEMS.length - 4) / 3) + 1;
+const poolSize = l => Math.min(ITEMS.length, 4 + 3 * (l - 1));
+const prevSize = l => l === 1 ? 0 : poolSize(l - 1);
+const QPL = 5;      // questions (kicks) per level
+const PASS = 3;     // goals needed to pass
+
+/* ===== save (localStorage, safe fallback) ===== */
+const KEY = "ovocny-fotbal-v1";
+let save = { stars:{}, goals:0, counts:{}, lang:"both", sound:true };
+try { const r = localStorage.getItem(KEY); if (r) save = Object.assign(save, JSON.parse(r)); } catch (e) {}
+function persist(){ try { localStorage.setItem(KEY, JSON.stringify(save)); } catch (e) {} }
+
+function unlockedLevel(){
+  let l = 1;
+  while (l < LEVELS && (save.stars[l] || 0) >= 1) l++;
+  return l;
+}
+
+/* ===== helpers ===== */
+const $ = s => document.querySelector(s);
+const rand = a => a[Math.floor(Math.random() * a.length)];
+function shuffle(a){ a = a.slice(); for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+/* ===== sound ===== */
+let actx = null;
+const keep = [];   // keep utterances referenced (some browsers drop them otherwise)
+let speakId = 0;
+function getCtx(){
+  try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
+  return actx;
+}
+function unlockAudio(){
+  const c = getCtx();
+  try {
+    if (c && c.state !== "running") c.resume();
+    if (c){ const bf = c.createBuffer(1, 1, 22050), sr = c.createBufferSource(); sr.buffer = bf; sr.connect(c.destination); sr.start(0); }
+  } catch (e) {}
+  try {
+    if ("speechSynthesis" in window && !unlockAudio.spoke){
+      unlockAudio.spoke = true;
+      const u = new SpeechSynthesisUtterance(" "); u.volume = 0; speechSynthesis.speak(u);
+    }
+  } catch (e) {}
+}
+["pointerdown","touchstart","click"].forEach(ev => document.addEventListener(ev, unlockAudio, {passive:true}));
+function beep(freqs, dur, type){
+  if (!save.sound) return;
+  try {
+    const c = getCtx(); if (!c) return;
+    if (c.state === "suspended") c.resume();
+    let t = c.currentTime + .03;
+    freqs.forEach(f => {
+      const o = c.createOscillator(), g = c.createGain();
+      o.type = type || "triangle"; o.frequency.value = f;
+      g.gain.setValueAtTime(.25, t); g.gain.exponentialRampToValueAtTime(.001, t + dur);
+      o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + dur);
+      t += dur * .8;
+    });
+  } catch (e) {}
+}
+function speakSeq(list){
+  if (!save.sound || !("speechSynthesis" in window)) return;
+  try {
+    const ss = window.speechSynthesis, id = ++speakId;
+    if (ss.speaking || ss.pending) ss.cancel();
+    if (ss.paused) ss.resume();
+    setTimeout(() => {
+      if (id !== speakId) return;
+      const voices = ss.getVoices();
+      const norm = v => v.lang.replace("_", "-").toLowerCase();
+      list.forEach(([text, lang]) => {
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = lang; u.rate = .8; u.volume = 1;
+        const v = voices.find(v => norm(v) === lang.toLowerCase()) || voices.find(v => norm(v).startsWith(lang.slice(0, 2)));
+        if (v) u.voice = v;
+        keep.push(u); if (keep.length > 20) keep.shift();
+        ss.speak(u);
+      });
+    }, 80);
+  } catch (e) {}
+}
+const LC = { cs:"cs-CZ", en:"en-US" };
+
+/* ===== state ===== */
+let S = { screen:"home" };
+let G = null;
+
+function stopAll(){
+  if (G && G.timer) clearTimeout(G.timer);
+  try { if ("speechSynthesis" in window) speechSynthesis.cancel(); } catch (e) {}
+}
+
+/* ===== screens ===== */
+function render(){
+  const app = $("#app");
+  if (S.screen === "home") app.innerHTML = homeHTML();
+  else if (S.screen === "map") app.innerHTML = mapHTML();
+  else if (S.screen === "album") app.innerHTML = albumHTML();
+  else if (S.screen === "game") { app.innerHTML = gameHTML(); startQuestion(); }
+  else if (S.screen === "result") app.innerHTML = resultHTML();
+}
+
+function homeHTML(){
+  const l = unlockedLevel();
+  const done = (save.stars[LEVELS] || 0) >= 1;
+  const langs = [["both","Česky + English"],["cs","Česky"],["en","English"]];
+  return `<div class="screen home">
+    <div class="logo">⚽🍎</div>
+    <h1>Ovocný fotbal</h1>
+    <p class="sub">Fruit Football</p>
+    <button class="big" data-act="play" data-l="${l}">${done ? "Hrát znovu" : "Hrát"}: úroveň ${l}</button>
+    <div class="row">
+      <button class="sec" data-act="map">Úrovně</button>
+      <button class="sec" data-act="album">Album</button>
+    </div>
+    <div class="seg" role="group" aria-label="Jazyk">
+      ${langs.map(([k, t]) => `<button data-act="lang" data-k="${k}" class="${save.lang === k ? "on" : ""}">${t}</button>`).join("")}
+    </div>
+    <button class="toggle" data-act="sound">${save.sound ? "🔊 Zvuk zapnutý" : "🔇 Zvuk vypnutý"}</button>
+    <button class="toggle" data-act="test">🔔 Zkouška zvuku</button>
+    <p class="hint" id="sndinfo" style="margin:0;text-align:center"></p>
+    <p class="stat">Vstřelené góly: ${save.goals}</p>
+  </div>`;
+}
+
+function mapHTML(){
+  const un = unlockedLevel();
+  let tiles = "";
+  for (let l = 1; l <= LEVELS; l++){
+    const s = save.stars[l] || 0;
+    const locked = l > un;
+    tiles += `<button class="tile ${l === un ? "cur" : ""}" ${locked ? "disabled" : ""} data-act="play" data-l="${l}">
+      <span class="n">${locked ? "🔒" : l}</span>
+      <span class="st">${"★".repeat(s)}<i>${"★".repeat(3 - s)}</i></span>
+    </button>`;
+  }
+  return `<div class="screen">
+    <div class="bar"><button class="icon" data-act="home" aria-label="Domů">←</button><div class="ttl">Úrovně</div></div>
+    <div class="grid3">${tiles}</div>
+    <p class="hint">Na každou další úroveň dáš nové ovoce a zeleninu. Na postup potřebuješ aspoň ${PASS} góly z ${QPL}.</p>
+  </div>`;
+}
+
+function albumHTML(){
+  const got = ITEMS.filter(it => (save.counts[it.en] || 0) >= 3).length;
+  const stick = it => {
+    const ok = (save.counts[it.en] || 0) >= 3;
+    return `<div class="stick ${ok ? "" : "lock"}"><span class="em">${it.e}</span>
+      <span class="w">${ok ? it.cs : "?"}</span><span class="w2">${ok ? it.en : ""}</span></div>`;
+  };
+  const sec = k => {
+    const list = ITEMS.filter(it => it.t === k);
+    const n = list.filter(it => (save.counts[it.en] || 0) >= 3).length;
+    return `<h3 class="grp">${CAT[k].emoji} ${cap(CAT[k].cs)} / ${cap(CAT[k].en)}: ${n} z ${list.length}</h3>
+      <div class="grid3">${list.map(stick).join("")}</div>`;
+  };
+  return `<div class="screen">
+    <div class="bar"><button class="icon" data-act="home" aria-label="Domů">←</button><div class="ttl">Album: ${got} z ${ITEMS.length}</div></div>
+    <p class="hint">Nálepku dostaneš, když 3× správně najdeš dané ovoce nebo zeleninu.</p>
+    ${sec("f")}${sec("v")}
+  </div>`;
+}
+
+function gameHTML(){
+  return `<div class="screen">
+    <div class="bar">
+      <button class="icon" data-act="home" aria-label="Domů">←</button>
+      <div class="ttl">Úroveň ${G.level}</div>
+      <div class="balls" id="balls"></div>
+    </div>
+    <div class="scene" id="scene">
+      <div class="goal"><div class="keeper" id="keeper">🤾</div></div>
+      <div class="ball" id="ball">⚽</div>
+      <div class="player" id="player">🏃</div>
+      <div class="banner" id="banner"></div>
+    </div>
+    <div class="ask" id="ask"></div>
+    <div class="opts" id="opts"></div>
+  </div>`;
+}
+
+function resultHTML(){
+  const goals = G.results.filter(Boolean).length;
+  const s = goals === QPL ? 3 : goals === QPL - 1 ? 2 : goals >= PASS ? 1 : 0;
+  const next = G.level < LEVELS;
+  const title = s === 3 ? "Perfektní!" : s > 0 ? "Úroveň splněna!" : "Skoro!";
+  const msg = s > 0 ? `Dal jsi ${goals} z ${QPL} gólů.` : `Dal jsi ${goals} z ${QPL}. Na postup potřebuješ aspoň ${PASS}.`;
+  const finished = s > 0 && !next;
+  return `<div class="screen result">
+    <div class="stars">${"★".repeat(s)}<i>${"★".repeat(3 - s)}</i></div>
+    <h2>${finished ? "Jsi mistr ovoce a zeleniny!" : title}</h2>
+    <p>${msg}</p>
+    ${s > 0 && next ? `<button class="big" data-act="play" data-l="${G.level + 1}">Další úroveň</button>` : ""}
+    <button class="${s > 0 && next ? "sec" : "big"}" data-act="play" data-l="${G.level}" ${s > 0 && next ? 'style="flex:none;width:100%;max-width:340px"' : ""}>Hrát znovu</button>
+    <button class="toggle" data-act="home">Domů</button>
+  </div>`;
+}
+
+/* ===== game logic ===== */
+function startLevel(l){
+  stopAll();
+  const pool = ITEMS.slice(0, poolSize(l));
+  const fresh = ITEMS.slice(prevSize(l), poolSize(l));
+  let ids = fresh.slice(0, QPL);
+  while (ids.length < QPL) ids.push(rand(pool));
+  for (let t = 0; t < 30; t++){
+    ids = shuffle(ids);
+    if (ids.every((x, i) => i === 0 || x !== ids[i - 1])) break;
+  }
+  const nOpt = l <= 2 ? 3 : 4;
+  const qs = ids.map(item => {
+    const others = shuffle(pool.filter(p => p !== item)).slice(0, nOpt - 1);
+    return {
+      item,
+      type: l >= 4 && Math.random() < .25 ? "sort" : (l >= 3 && Math.random() < .4 ? "name" : "find"),
+      lang: save.lang === "both" ? rand(["cs", "en"]) : save.lang,
+      options: shuffle([item, ...others])
+    };
+  });
+  qs.forEach(q => { if (q.type === "sort") q.options = shuffle(["f", "v"]); });
+  G = { level:l, qs, i:0, results:[], locked:false, timer:null };
+  S.screen = "game";
+  render();
+}
+
+function drawBalls(){
+  const el = $("#balls"); if (!el) return;
+  let h = "";
+  for (let i = 0; i < QPL; i++){
+    const r = G.results[i];
+    h += r === true ? "<span>⚽</span>" : r === false ? '<span class="no">✖</span>' : "<span>○</span>";
+  }
+  el.innerHTML = h;
+}
+
+function saySeq(q){
+  return save.lang === "both"
+    ? [[q.item.cs, LC.cs], [q.item.en, LC.en]]
+    : [[q.item[q.lang], LC[q.lang]]];
+}
+
+function startQuestion(){
+  G.locked = false;
+  const q = G.qs[G.i];
+  drawBalls();
+  const ban = $("#banner"); ban.className = "banner"; ban.textContent = "";
+  const ball = $("#ball"), keeper = $("#keeper");
+  ball.style.transition = "none"; keeper.style.transition = "none";
+  ball.style.transform = ""; keeper.style.transform = ""; $("#player").style.transform = "";
+  void ball.offsetWidth;
+  ball.style.transition = ""; keeper.style.transition = "";
+
+  const word = q.item[q.lang];
+  if (q.type === "find"){
+    const bothP = save.lang === "both";
+    $("#ask").innerHTML = `<button class="say" data-act="say" aria-label="Přehrát slovo">🔊</button>
+      <div class="prompt">${bothP
+        ? `<span class="small">Najdi / Find:</span><b>${q.item.cs}</b><b class="en">${q.item.en}</b>`
+        : `<span class="small">${q.lang === "cs" ? "Najdi:" : "Find:"}</span><b>${word}</b>`}</div>`;
+    $("#opts").innerHTML = q.options.map((o, i) => `<button class="opt" data-act="ans" data-i="${i}" aria-label="${o.cs}">${o.e}</button>`).join("");
+    speakSeq(saySeq(q));
+  } else if (q.type === "sort"){
+    const bs = save.lang === "both";
+    $("#ask").innerHTML = `<div class="bigemoji">${q.item.e}</div>
+      <div class="askq">${bs ? 'Ovoce, nebo zelenina?<span class="s2">Fruit or vegetable?</span>' : q.lang === "cs" ? "Ovoce, nebo zelenina?" : "Fruit or vegetable?"}</div>`;
+    $("#opts").innerHTML = q.options.map((k, i) => `<button class="opt k-${k}" data-act="ans" data-i="${i}">${CAT[k].emoji}<br><span class="cl">${bs ? CAT[k].cs + " / " + CAT[k].en : CAT[k][q.lang]}</span></button>`).join("");
+    speakSeq(bs ? [["Ovoce, nebo zelenina?", LC.cs], ["Fruit or vegetable?", LC.en]]
+      : q.lang === "cs" ? [["Ovoce, nebo zelenina?", LC.cs]] : [["Fruit or vegetable?", LC.en]]);
+  } else {
+    $("#ask").innerHTML = `<div class="bigemoji">${q.item.e}</div>
+      <div class="askq">${q.lang === "cs" ? "Co je to?" : "What is it?"}</div>`;
+    $("#opts").innerHTML = q.options.map((o, i) => `<button class="opt word" data-act="ans" data-i="${i}">${o[q.lang]}</button>`).join("");
+  }
+  $("#opts").className = "opts n" + q.options.length;
+}
+
+function answer(i){
+  if (G.locked) return;
+  G.locked = true;
+  const q = G.qs[G.i];
+  const correctVal = q.type === "sort" ? q.item.t : q.item;
+  const ok = q.options[i] === correctVal;
+  G.results.push(ok);
+  drawBalls();
+
+  const opts = $("#opts"); opts.classList.add("locked");
+  const btns = opts.querySelectorAll(".opt");
+  btns[q.options.indexOf(correctVal)].classList.add("ok");
+  if (!ok) btns[i].classList.add("pick");
+
+  let newSticker = false;
+  if (ok){
+    save.goals++;
+    if (q.type !== "sort"){
+      const c = (save.counts[q.item.en] || 0) + 1;
+      save.counts[q.item.en] = c;
+      newSticker = c === 3;
+    }
+  }
+  persist();
+
+  const scene = $("#scene"), ball = $("#ball"), keeper = $("#keeper"), ban = $("#banner");
+  const w = scene.clientWidth, h = scene.clientHeight;
+  const ZONES = [{x:-.3,y:0},{x:-.3,y:36},{x:0,y:0},{x:0,y:40},{x:.3,y:0},{x:.3,y:36},{x:-.15,y:14},{x:.15,y:14}];
+  let zi;
+  do { zi = Math.floor(Math.random() * ZONES.length); } while (zi === G.lastZone);
+  G.lastZone = zi;
+  const z = ZONES[zi];
+  const ty = -(h - 57) + z.y;
+  const player = $("#player");
+  player.style.transform = "scaleX(-1) translateX(-26px) rotate(8deg)";
+  setTimeout(() => { player.style.transform = ""; }, 260);
+  setTimeout(() => {
+    ball.style.transform = `translate(${z.x * w}px,${ty}px) scale(.8) rotate(540deg)`;
+    if (ok){
+      const kx = z.x === 0 ? rand([-.26, .26]) : -z.x * .85;
+      keeper.style.transform = `translate(${kx * w}px,-6px) rotate(${kx * 220}deg)`;
+    } else {
+      keeper.style.transform = `translate(${z.x * w}px,${z.y < 20 ? -22 : 0}px) rotate(${z.x * 220}deg) scale(1.1)`;
+    }
+  }, 280);
+  setTimeout(() => {
+    if (ok){ ban.textContent = "GÓL!"; ban.className = "banner show"; beep([523, 659, 784, 1046], .14); }
+    else { ban.textContent = "Chyceno!"; ban.className = "banner show miss"; beep([300, 220], .18, "sine"); }
+  }, 750);
+
+  const it = q.item;
+  const both = save.lang === "both";
+  const a = both ? it.cs : it[q.lang];
+  const b = both ? it.en : "";
+  const ct = CAT[it.t];
+  const catTxt = both ? `${ct.cs} / ${ct.en}` : ct[q.lang];
+  $("#ask").innerHTML = `<div class="reveal"><span class="em">${it.e}</span>
+    <div class="tx"><div class="a">${a}</div>${b ? `<div class="b">${b}</div>` : ""}
+    <span class="cat ${it.t}">${ct.emoji} ${catTxt}</span>
+    ${newSticker ? '<span class="new">⭐ Nová nálepka v albu!</span>' : ""}</div></div>`;
+  speakSeq(both ? [[it.cs, LC.cs], [it.en, LC.en], [ct.cs, LC.cs], [ct.en, LC.en]] : [[it[q.lang], LC[q.lang]], [ct[q.lang], LC[q.lang]]]);
+
+  G.timer = setTimeout(nextQuestion, ok ? 2800 : 3600);
+}
+
+function nextQuestion(){
+  G.i++;
+  if (G.i >= QPL){ finishLevel(); return; }
+  startQuestion();
+}
+
+function finishLevel(){
+  const goals = G.results.filter(Boolean).length;
+  const s = goals === QPL ? 3 : goals === QPL - 1 ? 2 : goals >= PASS ? 1 : 0;
+  if (s > (save.stars[G.level] || 0)) save.stars[G.level] = s;
+  persist();
+  S.screen = "result";
+  if (s > 0) beep([523, 659, 784, 1046, 1318], .16);
+  render();
+}
+
+/* ===== events ===== */
+document.getElementById("app").addEventListener("click", e => {
+  const t = e.target.closest("[data-act]");
+  if (!t) return;
+  const act = t.dataset.act;
+  if (act === "ans") return answer(+t.dataset.i);
+  if (act === "say"){
+    const q = G.qs[G.i];
+    return speakSeq(saySeq(q));
+  }
+  if (act === "test"){
+    save.sound = true; persist(); unlockAudio();
+    beep([523, 659, 784], .15);
+    speakSeq([["Ahoj, jsem tvůj trenér", LC.cs], ["Hello, I am your coach", LC.en]]);
+    const ok = "speechSynthesis" in window;
+    const v = ok ? speechSynthesis.getVoices() : [];
+    const has = p => v.some(x => x.lang.replace("_", "-").toLowerCase().startsWith(p));
+    const el = $("#sndinfo");
+    if (el) el.textContent = !ok ? "Tento prohlížeč neumí mluvit."
+      : v.length === 0 ? "Hlasy se ještě nenačetly, zkus to znovu."
+      : `Hlas česky: ${has("cs") ? "ano" : "ne"}, anglicky: ${has("en") ? "ano" : "ne"}. Zkontroluj hlasitost a tichý režim.`;
+    return;
+  }
+  if (act === "play") return startLevel(+t.dataset.l);
+  if (act === "lang"){ save.lang = t.dataset.k; persist(); return render(); }
+  if (act === "sound"){ save.sound = !save.sound; persist(); if (!save.sound) stopAll(); return render(); }
+  if (act === "home" || act === "map" || act === "album"){
+    stopAll(); S.screen = act; return render();
+  }
+});
+
+render();
+if ("serviceWorker" in navigator){ window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {})); }
+</script>
+</body>
+</html>
